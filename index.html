@@ -1,1 +1,272 @@
+from tkinter import *
+import json
+from cryptography.fernet import Fernet
+
+
+# ウィンドの準備
+root = Tk()
+root.title("解析パラダイス")
+# ウィンドウを最大化（Windowsのみ有効）
+#root.state('zoomed')
+root.minsize(1200, 800)
+root.maxsize(1200, 800)
+
+#素材準備
+#ボタンサイズ調整
+pixel_virtual = PhotoImage(width=1, height=1) 
+
+#画像
+photo = PhotoImage(file="paradise.png")
+
+#背景カラーリスト
+color_list = [
+    # おすすめ上位（目に優しく汎用性が高い）
+    "white", "lightgray", "lavender", "lightblue", "lightgreen", "mintcream", "beige",
+  
+    # 基本カラー（使いやすい）
+    "black", "navy", "gray", "silver", "brown", "khaki",
+  
+    # 明るめの色（アクセントに）
+    "lightpink", "salmon", "turquoise", "cyan", "gold", "orange", "yellow",
+  
+    # 濃い色（ポイントや強調に）
+    "red", "green", "blue", "purple", "magenta",
+]
+root.configure(bg = color_list[7])
+
+#ボタンカラーリスト
+button_color_list = [
+    "darkgreen",    # 背景と調和しつつ引き締める濃い緑（文字色は白がおすすめ）
+    "forestgreen",  # 落ち着いた深緑、安定感あり（文字色は白がおすすめ）
+    "navy",         # 濃紺でコントラスト強め（文字色は白がおすすめ）
+    "brown",        # 温かみのある自然な色（文字色は白がおすすめ）
+    "white",        # 清潔感があり目立つ（文字色は黒がおすすめ）
+    "darkslategray",# シックで落ち着いたグレー系（文字色は白がおすすめ）
+    "teal",         # 緑がかった青、爽やかで落ち着く（文字色は白がおすすめ）
+]
+
+#キー作成　初回のみ
+#pip install cryptography こちら必要
+# from cryptography.fernet import Fernet
+
+# key = Fernet.generate_key()
+# with open("secret.key", "wb") as key_file:
+#     key_file.write(key)
+
+#ログインのラベル表示
+log = "ログイン"
+
+
+
+
+
+
+
+
+#プログラム終了　関数
+def close_window():
+    root.destroy()
+
+#IDとpassword文字制限　関数
+def limit(string):
+    return len(string) <= 10    
+
+
+
+#password確認 関数
+def password_judge():
+    text1 = entry_massege_password1.get()
+    text2 = entry_massege_password2.get()
+    print(text1 == text2)
+    
+    if text1 != text2:
+        
+        button_Registration_judge_password.place(x = 500, y = 550, width = 200, height = 50)
+    else:
+        button_Registration_judge_password.place_forget()
+        id_judge(text1)
+        
+
+
+#IDの重複確認 登録 暗号化コード　関数
+
+# 鍵ファイルから鍵を読み込む関数
+def load_key():
+    with open("secret.key", "rb") as key_file:
+        return key_file.read()
+    
+# 鍵を読み込み
+key = load_key()
+f = Fernet(key)
+def id_judge(password):
+    text = entry_massege_id.get()
+    print(text)
+    print(password)
+    with open("user_list.json", "r", encoding="utf-8") as file:
+        data = json.load(file)
+  
+    id_judge = False
+    for user in data:
+        if user["id"] == text:
+            id_judge = True
+            break
+    if id_judge:
+        print("重複あり")
+        button_Registration_judge_id.place(x = 520, y = 370, width = 300, height = 30) 
+    else:
+        # パスワードを暗号化（バイト列を文字列に変換）
+        encrypted_password = f.encrypt(password.encode()).decode()
+        # 追加更新
+        data.append({"id": text, "password": encrypted_password})
+        with open("user_list.json", "w", encoding="utf-8") as file:
+            json.dump(data, file, indent=2, ensure_ascii=False)
+        #ラベル非表示
+        button_Registration_judge_id.place_forget() 
+        button_Registration_new.place(x = 420, y = 530, width = 360, height = 60)  
+        #ID　パスワード　入力　リセット
+        entry_massege_id.delete(0,"end")
+        entry_massege_password1.delete(0, "end") 
+        entry_massege_password2.delete(0, "end") 
+
+    
+
+    #ログイン　関数
+def entrance():
+    text_id = entry_massege_id.get()
+    # print(text_id)
+    text_password = entry_massege_password1.get()
+    # print(text_password)
+
+  
+    # user_list.json からデータ読み込み
+    with open("user_list.json", "r", encoding="utf-8") as file:
+        users = json.load(file)
+        # print(users)
+    
+    for user in users:
+        id = user["id"]
+        if id == text_id:
+            print(id)
+            print(user["password"])
+
+            encrypted_pw = user["password"]
+            pw = f.decrypt(encrypted_pw.encode()).decode()
+            print(pw)
+
+            if pw == text_password:
+                print("ok")
+               
+                button_Log.config(text="ログイン中")
+                
+            else:
+                print("ng")
+
+
+
+
+           
+
+
+
+#ラベル説明
+label_message = Label(
+    root, text = "解析パラダイスへようこそ！\n\nご登録ありがとうございます。\n\n豊富なツールでデータ解析をサポートします。\n\n使いやすさを追求し、快適な解析体験をお届けします。\n\nぜひ色々試して、解析の世界を楽しんでください！\n\n※ユーザーIDとパスワードは10文字以下",
+    bg = "white" ,
+    fg = "black" ,
+    font=("Meiryo", 12, "bold"))
+label_message.place(x = 400, y = 100, width = 400, height = 270)
+
+#ラベルID
+label_message_id = Label(
+    root, text = "ユーザーID",
+    bg = "black" ,
+    fg = "white" ,
+    font=("Meiryo", 10, "bold"))
+label_message_id.place(x = 400, y = 400, width = 140, height = 25)
+
+#エントリーID　入力
+vc_id = root.register(limit)
+entry_massege_id = Entry(root, validate = "key", validatecommand = (vc_id,"%P"),font=("Meiryo", 12, "bold"))
+entry_massege_id.place(x = 560, y = 400, width = 240, height = 25)
+
+#ラベルpassword
+label_message_password1 = Label(
+    root, text = "パスワード",
+    bg = "black" ,
+    fg = "white" ,
+    font=("Meiryo", 10, "bold"))
+label_message_password1.place(x = 400, y = 450, width = 140, height = 25)
+
+#エントリーpassword　入力
+vc_password = root.register(limit)
+entry_massege_password1 = Entry(root, validate = "key", validatecommand = (vc_password,"%P"),font=("Meiryo", 12, "bold"))
+entry_massege_password1.place(x = 560, y = 450, width = 240, height = 25)
+
+#ラベルpassword確認
+label_message_password2 = Label(
+    root, text = "パスワード(確認)",
+    bg = "black" ,
+    fg = "white" ,
+    font=("Meiryo", 10, "bold"))
+label_message_password2.place(x = 400, y = 500, width = 140, height = 25)
+
+#エントリーpassword　入力　確認
+vc_password = root.register(limit)
+entry_massege_password2 = Entry(root, validate = "key", validatecommand = (vc_password,"%P"),font=("Meiryo", 12, "bold"))
+entry_massege_password2.place(x = 560, y = 500, width = 240, height = 25)
+
+#画像表示 ラベル
+image_size = Label(
+    root,
+    text = "解析パラダイス",
+    image = photo,
+    width = 100,
+    height = 122,
+    compound = 't'
+)
+image_size.place(x = 100, y = 30)
+
+#ログインボタン
+button_Log = Button(root, text = log ,bg = "#00C300" , fg = "white" ,font=("Meiryo", 14, "bold"), command = entrance)
+
+button_Log.place(x = 950, y = 50, width = 150, height = 30)
+
+#新規登録完了
+button_Registration_new = Label(root, text = "新規登録ありがとうございます。\nユーザーIDとパスワード入力後ログイン下さい。" ,bg ="black" ,fg = "#00C300"  ,font=("Meiryo", 12, "bold"))
+
+#新規登録password間違い
+button_Registration_judge_password = Label(root, text = "パスワードが違います!!" ,bg ="black" ,fg = "red" ,font=("Meiryo", 12, "bold"))
+
+#新規登録id重複
+button_Registration_judge_id = Label(root, text = "別IDで設定して下さい!!" ,bg ="black" ,fg = "red" ,font=("Meiryo", 12, "bold"))
+
+#button_Registration_judge.place(x = 500, y = 550, width = 200, height = 50)  こちらの表示は関数で実施
+
+#登録ボタン
+button_Registration = Button(root, text = "登 録" ,bg = "#00C300" , fg = "white" ,font=("Meiryo", 16, "bold"), command = password_judge)
+
+button_Registration.place(x = 500, y = 600, width = 200, height = 50)
+
+
+#終了ボタン フォント名、サイズ、スタイル
+button_end = Button(root, text = "閉じる" ,bg = "#00C300" , fg = "white" , command = close_window,font=("Meiryo", 16, "bold"))
+
+button_end.place(x = 500, y = 700, width = 200, height =50)
+
+
+
+# root2 = Tk()
+
+# #画面表示のループ
+# root2.mainloop()
+
+
+
+#画面表示のループ
+root.mainloop()
+
+
+
+
+
 
